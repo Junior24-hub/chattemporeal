@@ -1,0 +1,47 @@
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Salas de Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .room-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .room-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .room-link {
+            text-decoration: none;
+            color: #0066cc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Salas de Chat Disponíveis</h1>
+    <p>Olá, {{ request.user.username }}!</p>
+    
+    {% if rooms %}
+        <ul class="room-list">
+            {% for room in rooms %}
+                <li class="room-item">
+                    <a class="room-link" href="{% url 'room' room.name %}">{{ room.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nenhuma sala disponível no momento.</p>
+    {% endif %}
+</body>
+</html>

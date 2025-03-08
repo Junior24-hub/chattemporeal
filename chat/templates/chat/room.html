@@ -1,0 +1,139 @@
+<!-- chat/templates/chat/room.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat: {{ room.name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #chat-log {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .message .username {
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .message .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+        .notification {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+        }
+        #chat-message-input {
+            width: 80%;
+            padding: 8px;
+        }
+        #chat-message-submit {
+            padding: 8px 15px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sala: {{ room.name }}</h1>
+    <div id="chat-log"></div>
+    <div>
+        <input id="chat-message-input" type="text" placeholder="Digite sua mensagem..."/>
+        <button id="chat-message-submit">Enviar</button>
+    </div>
+    
+    <script>
+        const roomName = "{{ room.name }}";
+        const username = "{{ username }}";
+        
+        // Conectar ao WebSocket
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/chat/' + roomName + '/'
+        );
+        
+        // Receber mensagens
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const chatLog = document.querySelector('#chat-log');
+            
+            if (data.type === 'notification') {
+                // Exibir notificação
+                const notificationDiv = document.createElement('div');
+                notificationDiv.className = 'notification';
+                notificationDiv.textContent = data.message;
+                chatLog.appendChild(notificationDiv);
+            } else {
+                // Exibir mensagem normal
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                
+                const usernameSpan = document.createElement('span');
+                usernameSpan.className = 'username';
+                usernameSpan.textContent = data.username + ': ';
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'content';
+                contentSpan.textContent = data.message;
+                
+                const timestampSpan = document.createElement('span');
+                timestampSpan.className = 'timestamp';
+                timestampSpan.textContent = ' [' + data.timestamp + ']';
+                
+                messageDiv.appendChild(usernameSpan);
+                messageDiv.appendChild(contentSpan);
+                messageDiv.appendChild(timestampSpan);
+                
+                chatLog.appendChild(messageDiv);
+            }
+            
+            // Rolar para a mensagem mais recente
+            chatLog.scrollTop = chatLog.scrollHeight;
+        };
+        
+        // Lidar com erros de conexão
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+            // Tentar reconectar após 3 segundos
+            setTimeout(function() {
+                console.log('Attempting to reconnect...');
+                window.location.reload();
+            }, 3000);
+        };
+        
+        // Enviar mensagem quando o botão for clicado
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            if (message.trim()) {
+                chatSocket.send(JSON.stringify({
+                    'message': message
+                }));
+                messageInputDom.value = '';
+            }
+        };
+        
+        // Enviar mensagem quando Enter for pressionado
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter key
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+    </script>
+</body>
+</html>
